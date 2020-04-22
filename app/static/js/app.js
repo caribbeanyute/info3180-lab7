@@ -9,14 +9,86 @@ Vue.component('app-header', {
     
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav mr-auto">
-          <li class="nav-item active">
+          <li class="nav-item" active>
             <router-link class="nav-link" to="/">Home <span class="sr-only">(current)</span></router-link>
+          </li>
+          <li class="nav-item" active>
+            <router-link class="nav-link" to="/upload">Upload <span class="sr-only">(current)</span></router-link>
           </li>
         </ul>
       </div>
     </nav>
     `
 });
+
+
+const uploadForm = Vue.component('upload-form', {
+    template: `
+    <div class="uploadForm">
+    <h2>Upload Form</h2>
+    <div class="alert alert-success" role="alert" v-if="message">
+      File Upload Successful
+    </div>
+    <div class="alert alert-danger" role="alert" v-if="error">
+      <ul>
+        <li v-for="err in errors">{{err}}</li>
+      </ul>
+    </div>
+    <form @submit.prevent="uploadPhoto" id="uploadForm">
+        <div class="form-group">
+        <label>Description</label>
+        <textarea class="form-control" rows="5" id="description" name="description"></textarea>
+      </div>
+        <input type="file" class="form-control-file" name="photo"><br>
+        <button type="submit" class="btn btn-primary mb-2">Upload</button>
+        </form>
+    
+    </div>`,
+    data : function () {
+        return {
+        message:false,
+        errors:[],
+        error:false
+        }
+        
+    },
+    methods :{
+        uploadPhoto: function(event) {
+        let self = this;
+        let uploadForm = document.getElementById('uploadForm'); 
+        let form_data = new FormData(uploadForm);
+        fetch("/api/upload/", {
+            method: 'POST',
+            body: form_data,
+            headers: {'X-CSRFToken': token},
+            credentials: 'same-origin'
+
+        }).then(function(response) {
+            return response.json();
+        }).then(function(jsonResponse){
+         // display a success message  
+         console.log(jsonResponse);     
+         if (jsonResponse.errors){
+            self.errors = jsonResponse.errors;
+            self.error = true;
+            self.message = false;
+        }else{
+            self.message = true;
+            self.error = false;
+        }
+        })
+        .catch(function(error) {
+            console.log(jsonResponse);
+            console.log(error);
+        });
+      }
+
+    }
+});
+
+
+
+
 
 Vue.component('app-footer', {
     template: `
@@ -57,7 +129,7 @@ const router = new VueRouter({
     routes: [
         {path: "/", component: Home},
         // Put other routes here
-
+        {path: "/upload", component: uploadForm },
         // This is a catch all route in case none of the above matches
         {path: "*", component: NotFound}
     ]
